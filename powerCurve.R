@@ -54,7 +54,6 @@ fitPowerCurve <- function(data, printBoolean = FALSE){
   return(mod.ss)
 }
 
-powerCurve <- fitPowerCurve(data) 
 predictPowerCurve <- function(powerCurve,x){
   # Input   : vecteur/double x et la powerCurve fitted
   # Output  : dataframe avec les colonnes x y se (erreur)
@@ -63,7 +62,6 @@ predictPowerCurve <- function(powerCurve,x){
   
   return(predict.ss(powerCurve,x))
 }
-predictPowerCurve(powerCurve,c(1,2,3,4,5,6,7))
 
 # http://xn--drmstrre-64ad.dk/wp-content/wind/miller/windpower%20web/en/tour/wres/powdensi.htm
 # library(fitdistrplus)
