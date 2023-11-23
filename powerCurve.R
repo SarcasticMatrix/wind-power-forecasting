@@ -1,23 +1,15 @@
-library(WindCurves)
-powerCurveSmoothing <- function(data){
-
-  .data <- data.frame(s=data$Ws1,p=data$p)
-  .data <- .data[order(.data$s), ]
-
-  
-  average_by_s <- aggregate(.data$p, by = list(.data$s), FUN = median)
-  .data <- average_by_s
-  x <- fitcurve(.data)
-  
-  print(validate.curve(x))
-   
-  return(x)
-}
-
 library(npreg)
+library(tidyverse)
+
+################################################################################
+################################################################################
+################################################################################
+# FIT A POWER CURVE
 fitPowerCurve <- function(data, printBoolean = FALSE){
   # Input   : dataframe avec les colonnes $Ws1 et $p
   # Output  : model qui smooth la power curve
+  
+  cat ("Beginning the fitting of the power curve ... \n")
   
   .data <- data.frame(s=data$Ws1,p=data$p)
   .data <- .data[order(.data$s), ]
@@ -50,17 +42,34 @@ fitPowerCurve <- function(data, printBoolean = FALSE){
     legend("bottomright", c("ss","smsp"), lty=1, col=1:2, bg="grey95")
     title(main = "Power curve splines smoothig")
   }
-  
+  cat ("The fit of the power curve is done ... \n")
   return(mod.ss)
 }
-
+################################################################################
+################################################################################
+################################################################################
+plotPowerCurve <- function(data,year){
+  data$year <- format(data$t,"%Y")
+  if (year %in%  unique(data$year)) {
+    dataYear <- data[data$year== year,]
+  }
+  
+  par(mfrow=c(1, 3))
+  plot(dataYear$p ~ dataYear$Ws1, main="1-hour ahead forecasted") 
+  plot(dataYear$p ~ dataYear$Ws2, main="2-hour ahead forecasted")
+  plot(dataYear$p ~ dataYear$Ws3, main="3-hour ahead forecasted")
+}
+################################################################################
+################################################################################
+################################################################################
 predictPowerCurve <- function(powerCurve,x){
   # Input   : vecteur/double x et la powerCurve fitted
   # Output  : dataframe avec les colonnes x y se (erreur)
   #     x     y           se
   # 1   4     0.1549109   0.003117653
+  prediction <- predict.ss(powerCurve,x)
   
-  return(predict.ss(powerCurve,x))
+  return(prediction %>% rename(pHat  = y,Ws = x,standardErrors = se))
 }
 
 # http://xn--drmstrre-64ad.dk/wp-content/wind/miller/windpower%20web/en/tour/wres/powdensi.htm

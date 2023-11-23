@@ -3,7 +3,8 @@ library(patchwork)
 
 source('plotting.R')
 source('powerCurve.R')
-source('logisticSDE-model.R')
+
+#source('logisticSDE-model.R')
 
 ############################################################
 # Data simulation
@@ -15,28 +16,43 @@ data <- read.csv('data/cex4WindDataInterpolated.csv')
 data$t <- as.POSIXct(data$t, tz="UTC")
 
 data$year <- format(data$t,"%Y")
-data1999 <- data[data$year== 2002,]
+data1999 <- data[data$year== 1999,]
 
-plotPowerCurve(data,2002)
-
-############################################################
+################################################################################
 # Model creation and estimation
-############################################################
+################################################################################
+dataTest <- data1999[data1999$t < "1999-10-01",]
 
-fit <- fitLogisticSDE(data1999)
-print(summary(fit))
+powerCurve <- fitPowerCurve(dataTest)
+p1Hat <- predictPowerCurve(powerCurve,dataTest$Ws1)
+  
+p1Hat$residuals <- p1Hat$pHat - dataTest$p
 
-plotResiduals(fit$residuals)
 
-data$year <- format(data$t,"%Y")
-data2000 <- data[data$year== 2000,]
-.data <- data.frame(
-  t = data2000$toy,
-  y = data2000$p
-)
-pred = obj$predict(.data,k.ahead=1)
-aheadOneHour <- pred$y.predict[pred$k.ahead == 1] 
 
-T <- length(data2000$p)
-plot(data2000$p[2:T] ~ data2000$toy[2:T],col='red')
-lines(aheadOneHour ~ data2000$toy[2:T])
+data_range <- 1:240
+
+plot(dataTest$p[data_range] ~ dataTest$t[data_range], ylab="power", xlab='date',type='n')
+# Interval de confiance
+conf_level <- 0.05
+N <- length(dataTest$t)
+upperBound <- p1Hat$pHat[data_range] + N * qnorm((1 + conf_level) / 2) * p1Hat$standardErrors[data_range]
+lowerBound <- p1Hat$pHat[data_range] - N * qnorm((1 + conf_level) / 2) * p1Hat$standardErrors[data_range]
+polygon(c(dataTest$t[data_range], rev(dataTest$t[data_range])), c(upperBound, rev(lowerBound)), col='gray', border=NA)
+
+lines(dataTest$p[data_range] ~ dataTest$t[data_range])
+lines(p1Hat$pHat[data_range] ~ dataTest$t[data_range], col='red')
+legend("topright", legend=c("Measured", "Predicted", "95% Confidence Interval"),
+       col=c("black", "red", "gray"), lty=1:1, cex=0.8)
+################################################################################
+# Some plots 
+################################################################################
+n <- 100
+xx <- c(0:n, n:0)
+yy <- c(c(0, cumsum(stats::rnorm(n))), rev(c(0, cumsum(stats::rnorm(n)))))
+plot   (xx, yy, type = "n", xlab = "Time", ylab = "Distance")
+polygon(xx, yy, col = "gray", border = "red")
+title("Distance Between Brownian Motions")
+
+
+

@@ -2,6 +2,11 @@
 ## PLOTTING FUNCTIONS
 ################################################################################
 library(dbplyr)
+
+
+################################################################################
+################################################################################
+################################################################################
 plotYear <- function(data,year){
   data$year <- format(data$t,"%Y")
   if (year %in%  unique(data$year)) {
@@ -45,8 +50,9 @@ plotYear <- function(data,year){
     cat ('The year',year,'is not part of the dataset')
   }
 }
-
-
+################################################################################
+################################################################################
+################################################################################
 plotResiduals <- function(residuals) {
   
   par(mfrow=c(2, 2))
@@ -62,30 +68,50 @@ plotResiduals <- function(residuals) {
   
   # Cumulated periodogram
   cpgram(residuals, main="Cumulated periodogram")
+  
+  
+  x11()
+  qqnorm(p1Hat$residuals, pch = 1, frame = FALSE)
+  qqline(p1Hat$residuals, col = "steelblue", lwd = 2)
 }
-
-plotResidualsTimeSeries <- function(X){
+################################################################################
+################################################################################
+################################################################################
+library(Metrics)
+plotResidualsTimeSeries_1hAhead <- function(p1Hat,data){
   
-  # Utiliser les dates de X$date pour la séquence gridSeq
-  gridSeq <- seq(min(X$date), by="months", length=12)
+  gridSeq <- seq(min(data$t), by="months", length=12)
   
-  # Personnalisation des paramètres graphiques
   par(mfrow=c(5,1), mar=c(1, 5, 1.5, 1), oma=c(2, 2, 2, 1))
   
   # Plot residuals
-  plot(X$date, X$residuals, ylab="residuals", xlab="", type="n")
+  plot(p1Hat$residuals ~ data$t, ylab="residuals", xlab="", type="n")
   abline(v=gridSeq, col="grey92")
-  lines(X$date, X$residuals)
+  lines(p1Hat$residuals ~ data$t,col='blue')
+  
+  # Plot measured power and 1-hour ahead forecasted power 
+  plot(data$p ~ data$t, ylab="power", xlab="", type="n")
+  abline(v=gridSeq, col="grey92")
+  lines(p1Hat$pHat ~ data$t,col='red')
+  lines(data$p ~ data$t)
+  legend( "topright",c("Measured", "1-hour ahead forecast"), lty=1, col=1:2, bg="grey95")
+
+  # Plot wind speed 1-hour ahead forecast
+  plot(data$Ws1 ~ data$t, ylab="wind speed", xlab="", type="n")
+  abline(v=gridSeq, col="grey92")
+  lines(data$Ws1 ~ data$t)
+  
+  # Plot temperature 1-hour ahead forecast
+  plot(data$T1 ~ data$t, ylab="temperature", xlab="", type="n")
+  abline(v=gridSeq, col="grey92")
+  lines(data$T1 ~ data$t)
+  
+  # Plot wind direction 1-hour ahead forecast
+  plot(data$Wd1 ~ data$t, ylab="wind direction", xlab="", type="n")
+  abline(v=gridSeq, col="grey92")
+  lines(data$Wd1 ~ data$t)
+  
+  cat ("Root-Mean-Square Error (RMSE) is:", round(rmse(p1Hat$pHat,data$p),3), "\n")
 }
 
-plotPowerCurve <- function(data,year){
-  data$year <- format(data$t,"%Y")
-  if (year %in%  unique(data$year)) {
-    dataYear <- data[data$year== year,]
-  }
-    
-  par(mfrow=c(1, 3))
-  plot(dataYear$p ~ dataYear$Ws1, main="1-hour ahead forecasted") 
-  plot(dataYear$p ~ dataYear$Ws2, main="2-hour ahead forecasted")
-  plot(dataYear$p ~ dataYear$Ws3, main="3-hour ahead forecasted")
-}
+
