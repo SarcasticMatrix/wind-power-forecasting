@@ -55,6 +55,8 @@ plotYear <- function(data,year){
 ################################################################################
 plotResiduals <- function(residuals) {
   
+  residuals <- na.omit(residuals)
+  
   par(mfrow=c(2, 2))
   
   # Residuals ACF
@@ -71,8 +73,8 @@ plotResiduals <- function(residuals) {
   
   
   x11()
-  qqnorm(p1Hat$residuals, pch = 1, frame = FALSE)
-  qqline(p1Hat$residuals, col = "steelblue", lwd = 2)
+  qqnorm(residuals, pch = 1, frame = FALSE)
+  qqline(residuals, col = "steelblue", lwd = 2)
 }
 ################################################################################
 ################################################################################
@@ -85,14 +87,14 @@ plotResidualsTimeSeries_1hAhead <- function(p1Hat,data){
   par(mfrow=c(5,1), mar=c(1, 5, 1.5, 1), oma=c(2, 2, 2, 1))
   
   # Plot residuals
-  plot(p1Hat$residuals ~ data$t, ylab="residuals", xlab="", type="n")
+  plot(p1Hat$residuals ~ p1Hat$t, ylab="residuals", xlab="", type="n")
   abline(v=gridSeq, col="grey92")
-  lines(p1Hat$residuals ~ data$t,col='blue')
+  lines(p1Hat$residuals ~ p1Hat$t,col='blue')
   
   # Plot measured power and 1-hour ahead forecasted power 
   plot(data$p ~ data$t, ylab="power", xlab="", type="n")
   abline(v=gridSeq, col="grey92")
-  lines(p1Hat$pHat ~ data$t,col='red')
+  lines(p1Hat$pHat ~ p1Hat$t,col='red')
   lines(data$p ~ data$t)
   legend( "topright",c("Measured", "1-hour ahead forecast"), lty=1, col=1:2, bg="grey95")
 

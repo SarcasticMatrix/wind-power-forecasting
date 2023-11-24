@@ -21,7 +21,7 @@ data1999 <- data[data$year== 1999,]
 ################################################################################
 # Model creation and estimation
 ################################################################################
-dataTest <- data1999[data1999$t < "1999-10-01",]
+dataTest <- data[data$t < "1999-10-01",]
 
 powerCurve <- fitPowerCurve(dataTest)
 p1Hat <- predictPowerCurve(powerCurve,dataTest$Ws1)
@@ -44,15 +44,6 @@ lines(dataTest$p[data_range] ~ dataTest$t[data_range])
 lines(p1Hat$pHat[data_range] ~ dataTest$t[data_range], col='red')
 legend("topright", legend=c("Measured", "Predicted", "95% Confidence Interval"),
        col=c("black", "red", "gray"), lty=1:1, cex=0.8)
-################################################################################
-# Some plots 
-################################################################################
-n <- 100
-xx <- c(0:n, n:0)
-yy <- c(c(0, cumsum(stats::rnorm(n))), rev(c(0, cumsum(stats::rnorm(n)))))
-plot   (xx, yy, type = "n", xlab = "Time", ylab = "Distance")
-polygon(xx, yy, col = "gray", border = "red")
-title("Distance Between Brownian Motions")
 
 
 
