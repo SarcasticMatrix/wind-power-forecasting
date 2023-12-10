@@ -72,6 +72,23 @@ predictPowerCurve <- function(powerCurve,x){
   return(prediction %>% rename(pHat  = y,Ws = x,standardErrors = se))
 }
 
+mask <- data$T1 < 280 & 270 < data$T1
+test <- data[mask,]
+plot(test$p ~ test$Ws1)
+
+data <- na.omit(data)
+data$diffT1 <- c(diff(data$T1),0.1)
+mask <- ! (abs(data$diffT1) >= 0.4)
+test <- data[mask,]
+plot(test$p ~ test$Ws1)
+
+# Les points avec une Ws1 grande mais un p bizarre sont les points où la direction du vent a tourné
+data <- na.omit(data)
+data$diffWd1 <- c(diff(data$Wd1),0.1)
+mask <- abs(data$diffWd1) > 300
+test <- data[mask,]
+plot(test$p ~ test$Ws1)
+
 # http://xn--drmstrre-64ad.dk/wp-content/wind/miller/windpower%20web/en/tour/wres/powdensi.htm
 # library(fitdistrplus)
 # library(actuar)
