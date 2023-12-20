@@ -71,40 +71,64 @@ class Model:
         else:
             print(f'The year {year} is not part of the dataset')
 
-    # def plot_model(self):
+    def plot_model(
+            self,
+            nbr_hours: Optional[int] = 0,
+            nbr_days: Optional[int] = 0,
+            nbr_weeks: Optional[int] = 1,
+        ):
         
-    #     if hasattr(self,"model") and hasattr(self,"data"):
-    #         plt.figure()
+        if hasattr(self,"model") and hasattr(self,"data"):
 
-    #         # Plot actual values
-    #         plt.plot(self.model., self.data['p'], linewidth=0.7, label='Actual Values', color='blue')
+            mask = (self.first_date < self.data['t']) & (self.data['t'] < self.last_date)
+            dates = self.data.loc[mask]
+            # series = self.series.values[mask]
+            # fittedvalues = self.model.fittedvalues.values[mask]
 
-    #         # Plot fitted values
-    #         plt.plot(series.index, self.model.fittedvalues, linewidth=0.7, label='Fitted Values', color='red')
+            #print(mask.shape, dates.shape, series.shape, fittedvalues.shape)
 
-    #         plt.title('Comparison of Actual vs. Fitted Values')
-    #         plt.xlabel('Time')
-    #         plt.ylabel('Wind Power')
-    #         plt.legend()
-    #         plt.show()
-    #     else:
-    #         print('self.model or self.data do not exist')
+            first_instant = self.data.loc[self.data['t'] >= self.first_date,'t'].iloc[0]
+
+            mask = dates['t'] < first_instant + pd.Timedelta(hours=nbr_hours, days=nbr_days, weeks=nbr_weeks)
+            mask = mask.values
+            
+            dates = dates.loc[mask,'t']
+            series = self.series[mask]
+            fittedvalues = self.model.fittedvalues[mask]
+
+            plt.figure()
+
+            # Plot actual values
+            plt.plot(dates.values[:-1], series[:-1], linewidth=0.7, label='Actual Values', color='blue')
+
+            # Plot fitted values
+            plt.plot(dates.values - pd.Timedelta(hours=1), fittedvalues, linewidth=0.7, label='Fitted Values', color='red')
+
+            plt.title('Comparison of Actual vs. Fitted Values')
+            plt.xlabel('Time')
+            plt.ylabel('Wind Power')
+            plt.legend()
+            plt.show()
+
+        else:
+            print('self.model or self.data do not exist')
 
     
     def export_residuals(self,
                          path: Optional['str'] = None
         ):
         
-        if hasattr(self, "model"):
+        if hasattr(self, "model") and hasattr(self,"df_estimation"):
             print(f'Model {self.model_name} - Residuals are getting exported')
 
             path = f"./residuals/residuals-{self.model_name}.csv" if path is None else None
             residuals = self.model.resid
+            #residuals = self.df_estimation['fittedvalues'] - self.df_estimation['series']
             residuals = residuals.dropna()
 
             pd.DataFrame(residuals,columns=['residuals']).to_csv(path)
         else:
-            print('Model does not exist - you must first fit it')
+            print('self.model or self.df_estimation do not exist')
 
 
 
