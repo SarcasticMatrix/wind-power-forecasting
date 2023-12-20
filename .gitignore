@@ -1,4 +1,2 @@
-# History files
-.Rhistory
-.Rapp.history
-.RData
+Useless/
+.venv/
