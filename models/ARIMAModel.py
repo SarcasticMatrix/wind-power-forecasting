@@ -12,51 +12,53 @@ warnings.filterwarnings("ignore")
 
 class ARIMAModel(Model):
     def __init__(self):
-        super().__init__(model_name="ARIMA")
+        super().__init__(model_name="ARIMA(1,1,1)")
 
     def fit(self, 
-            first_date: Optional[str] = "1999-01-01",
-            last_date: Optional[str] = "2000-01-01",
             print_summary: Optional[bool] = False):
 
         if not hasattr(self, "data"):
             self.get_data()
 
-        if first_date < last_date:
-            self.first_date = first_date
-            self.last_date = last_date
+        self.get_data(
+            self.first_date,
+            self.last_date + pd.Timedelta(hours=1),
+            self.path)
 
-            mask = (first_date < self.data['t']) & (self.data['t'] < last_date)
-            series = self.data.loc[mask, ['t', 'p']]
-            series.set_index('t', inplace=True)
-            self.series = series
+        p = self.data['p']
+        model = ARIMA(p, order=(1, 1, 1))
+        self.model = model.fit()
 
-            model = ARIMA(series, order=(1, 1, 1))
-            self.model = model.fit()
-
-            if print_summary:
-                print(self.model.summary())
-                print(self.model.resid.describe())
+        if print_summary:
+            print(self.model.summary())
+            print(self.model.resid.describe())
             
-            dates = self.data.loc[mask,'t'].values
-            df1 = pd.DataFrame({
-                't': dates[:-1],
-                'series': series[:-1].values.flatten()
-            })
-            
-            df2 = pd.DataFrame({
-                't':dates, 
-                'fittedvalues': self.model.fittedvalues.values
-            })
+        df2 = pd.DataFrame({
+            'fittedvalues': self.model.fittedvalues.values
+        })
+        df_estimation = pd.DataFrame({
+            't': self.data['t'].values,
+            'fittedValues': df2['fittedvalues'].shift(periods=-1),
+        })
 
-            self.df_estimation = pd.DataFrame({
-                't': df1['t'],
-                'fittedvalues': df2['fittedvalues'].shift(periods=-1),
-                'series': df1['series']
-            })
+        self.data = pd.merge(self.data,df_estimation, on='t', how='outer')
+        self.data['fittedResiduals'] = self.data['p'] - self.data['fittedValues']
 
+        self.data.drop(self.data.tail(1).index,inplace=True) 
+    
+    def forecast(self, 
+                 steps: Optional[int] = 1,
+                 alpha=0.05
+                ):
 
+        if self.model is not None:
+            forecast_result = self.model.get_forecast(steps=steps, alpha=alpha)
+            forecast_values = forecast_result.predicted_mean
+            conf_int = forecast_result.conf_int(alpha=alpha)
+            return forecast_values,conf_int
         else:
-            print("the first_date must be < than last_date")
+            print("The ARIMA model has not been adjusted. Please adjust the model first.")
+
+
 
 

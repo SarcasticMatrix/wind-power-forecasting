@@ -1,7 +1,9 @@
 from typing import Optional
 
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime 
 
 class Model:
     def __init__(
@@ -13,14 +15,28 @@ class Model:
 
     def get_data(
         self,
+        first_date: Optional[datetime] = datetime(year=1999, month=1, day=1),
+        last_date: Optional[datetime] = datetime(year=2003, month=4, day=1),
         path='./data/cex4WindDataInterpolated.csv'
     ):
 
         self.data = pd.read_csv(path)
         self.data['t'] = pd.to_datetime(self.data['t'])
-    
+
+        mask = (first_date <= self.data['t']) & (self.data['t'] <= last_date)
+        self.data = self.data.loc[mask,]
+
+        self.first_date = first_date 
+        self.last_date = last_date
+        self.path = path
 
     def plot_data(self, year=1999):
+
+        self.get_data(
+            first_date = datetime(year=year, month=1, day=1),
+            last_date = datetime(year=year, month=12, day=31)
+        )
+
         self.data['year'] = self.data['t'].dt.strftime('%Y')
         dataYear = self.data[self.data['year'] == str(year)]
 
@@ -80,34 +96,42 @@ class Model:
         
         if hasattr(self,"model") and hasattr(self,"data"):
 
-            mask = (self.first_date < self.data['t']) & (self.data['t'] < self.last_date)
-            dates = self.data.loc[mask]
-            # series = self.series.values[mask]
-            # fittedvalues = self.model.fittedvalues.values[mask]
-
-            #print(mask.shape, dates.shape, series.shape, fittedvalues.shape)
-
-            first_instant = self.data.loc[self.data['t'] >= self.first_date,'t'].iloc[0]
-
-            mask = dates['t'] < first_instant + pd.Timedelta(hours=nbr_hours, days=nbr_days, weeks=nbr_weeks)
-            mask = mask.values
+            mask = self.data['t'] < self.first_date + pd.Timedelta(hours=nbr_hours, days=nbr_days, weeks=nbr_weeks)
             
-            dates = dates.loc[mask,'t']
-            series = self.series[mask]
-            fittedvalues = self.model.fittedvalues[mask]
+            dates = self.data.loc[mask,'t']
+            p = self.data.loc[mask,'p']
+            fittedValues = self.data.loc[mask,'fittedValues']
+            fittedResiduals = self.data.loc[mask,'fittedResiduals']
 
-            plt.figure()
+            # Utilisez plt.subplots avec gridspec_kw pour définir les hauteurs relatives des sous-figures
+            fig, axs = plt.subplots(2, 1, figsize=(10, 6), gridspec_kw={'height_ratios': [3, 1]})
 
-            # Plot actual values
-            plt.plot(dates.values[:-1], series[:-1], linewidth=0.7, label='Actual Values', color='blue')
+            # Sous-figure 1
+            axs[0].plot(dates, p, linewidth=0.7, label='Measured power', color='blue')
+            axs[0].plot(dates, fittedValues, linewidth=0.7, label='Fitted Values', color='red')
+            axs[0].set_title(f'{self.model_name} fitted versus measured power')
+            axs[0].set_ylabel('Wind Power')
+            axs[0].legend()
 
-            # Plot fitted values
-            plt.plot(dates.values - pd.Timedelta(hours=1), fittedvalues, linewidth=0.7, label='Fitted Values', color='red')
+            # Ajouter des grilles verticales chaque jour
+            for day in pd.date_range(start=dates.min(), end=dates.max(), freq='D'):
+                axs[0].axvline(day, linestyle='--', color='gray', linewidth=0.5)
 
-            plt.title('Comparison of Actual vs. Fitted Values')
-            plt.xlabel('Time')
-            plt.ylabel('Wind Power')
-            plt.legend()
+            # Sous-figure 2 (résidus)
+            axs[1].plot(dates, fittedResiduals, linewidth=0.5, label='Residuals', color='black')
+            axs[1].set_xlabel('Time')
+            axs[1].set_ylabel('Residuals')
+
+            # Ajouter des grilles verticales chaque jour
+            for day in pd.date_range(start=dates.min(), end=dates.max(), freq='D'):
+                axs[1].axvline(day, linestyle='--', color='gray', linewidth=0.5)
+
+            # Ajuster l'espace entre les sous-figures
+            plt.tight_layout()
+
+            # Ajouter une légende commune au niveau de l'axe x
+            plt.legend(loc='upper left', bbox_to_anchor=(0, -0.2), fancybox=True, shadow=True, ncol=2)
+
             plt.show()
 
         else:
@@ -118,17 +142,20 @@ class Model:
                          path: Optional['str'] = None
         ):
         
-        if hasattr(self, "model") and hasattr(self,"df_estimation"):
+        if hasattr(self, "model") and hasattr(self,"data"):
             print(f'Model {self.model_name} - Residuals are getting exported')
 
             path = f"./residuals/residuals-{self.model_name}.csv" if path is None else None
             residuals = self.model.resid
-            #residuals = self.df_estimation['fittedvalues'] - self.df_estimation['series']
+            residuals = self.data['fittedResiduals']
             residuals = residuals.dropna()
 
             pd.DataFrame(residuals,columns=['residuals']).to_csv(path)
         else:
-            print('self.model or self.df_estimation do not exist')
+            print('self.model and/or self.data do not exist')
+
+
+
 
 
 
