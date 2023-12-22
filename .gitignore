@@ -1,6 +1,12 @@
+# Folder 
 Useless/
 .venv/
 models/__pycache__/
 __pycache__/
 .ipynb_checkpoints/
+
+# Python notebook
 test.ipynb
+
+# R
+residuals/.Rhistory
