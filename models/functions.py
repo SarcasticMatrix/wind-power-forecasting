@@ -1,5 +1,4 @@
 import numpy as np
-from models.Model import Model
 
 def compute_metrics(
         p: np.array,
@@ -19,7 +18,7 @@ def compute_metrics(
         'Mean squared error': mean_squared_error
     }
 
-    print(f" \n Forecqsting metrics of {name_forecast} model: \n \
+    print(f" \n Forecasting metrics of {name_forecast} model: \n \
         Biais of residuals: {mean_error} \n \
         Variance of residuas: {variance_error} \n \
         Mean absolute error (MAE): {mean_absolute_error} \n \
