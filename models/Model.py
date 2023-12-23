@@ -186,6 +186,6 @@ class Model:
             residuals = self.data["fittedResiduals"]
             residuals = residuals.dropna()
 
-            pd.DataFrame(residuals, columns=["residuals"]).to_csv(path)
+            pd.DataFrame(residuals, columns=["fittedResiduals"]).to_csv(path)
         else:
             print("self.model and/or self.data do not exist")

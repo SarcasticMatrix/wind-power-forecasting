@@ -77,9 +77,11 @@ def run_ARIMAModel(
     ###########################################################################
     ## Check the whole model
     ###########################################################################
-    print("Checking the whole model...")
+    print("Checking the model on the whole dataset...")
     myModel = ARIMAModel()
     myModel.fit(print_summary=True)
+    myModel.plot_model()
+    myModel.export_residuals()
 
     ###########################################################################
     ## FORECASTS

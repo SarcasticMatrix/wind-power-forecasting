@@ -1,8 +1,8 @@
 library(dbplyr)
 
 path <- "C:/Users/utilisateur/Documents/DTU/Première Année 2023-2024/Cours/Advanced Time Series Analysis/Computer Exercise 4/windPowerForecasting/residuals/"
-file_name <- "residuals-ARIMA.csv"
-residuals <- read.csv(paste(path,file_name,sep=""))$residuals
+file_name <- "residuals-ARIMA(1,1,1).csv"
+residuals <- read.csv(paste(path,file_name,sep=""))$fittedResiduals
 
 
 plotResiduals <- function(residuals) {
@@ -51,14 +51,14 @@ plot_residuals_analysis <- function(residuals) {
   par(mfrow=c(1, 2))
   
   # Plage spécifique [min(residus), -2.5]
-  hist(residuals, main="Histogram of Residuals", xlab="Residuals", probability=TRUE, xlim=c(lower_limit, -2.5), ylim=ylim)
+  hist(residuals, main="Histogram of Residuals", xlab="Residuals", probability=TRUE, xlim=c(lower_limit, -0.5), ylim=ylim)
   lines(density(residuals), col="darkred", lwd=2)
   mean_resid <- mean(residuals)
   sd_resid <- sd(residuals)
   curve(dnorm(x, mean=mean_resid, sd=sd_resid), col="steelblue", lwd=2, add=TRUE)
   
   # Plage spécifique [2.5, max(residus)]
-  hist(residuals, main="Histogram of Residuals", xlab="Residuals", probability=TRUE, xlim=c(2.5, upper_limit), ylim=ylim)
+  hist(residuals, main="Histogram of Residuals", xlab="Residuals", probability=TRUE, xlim=c(0.5, upper_limit), ylim=ylim)
   lines(density(residuals), col="darkred", lwd=2)
   curve(dnorm(x, mean=mean_resid, sd=sd_resid), col="steelblue", lwd=2, add=TRUE)
   

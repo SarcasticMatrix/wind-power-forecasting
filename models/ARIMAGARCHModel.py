@@ -14,13 +14,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import warnings
-
 warnings.filterwarnings("ignore")
 
 
 class ARIMAGARCHModel(Model):
     def __init__(self):
-        super().__init__(model_name="ARIMA(1,1,1)")
+        super().__init__(model_name="ARIMA(1,1,1)-GARCH(1,1)")
 
     def fit(self, print_summary: Optional[bool] = False):
 
@@ -55,9 +54,10 @@ class ARIMAGARCHModel(Model):
         self.data.drop(self.data.tail(1).index, inplace=True)
 
         # Fit GARCH(1,1)
-        print(self.data["fittedResiduals"].dropna().isnull().values.any())
         garch = arch.arch_model(self.data["fittedResiduals"].dropna(), p=1, q=1)
         self.garch = garch.fit(disp="off")
+
+        self.data["fittedResiduals-GARCH"] = self.garch.resid
 
         if print_summary:
             print(self.garch.summary())
@@ -75,10 +75,10 @@ class ARIMAGARCHModel(Model):
             upper = conf_int["upper p"].iloc[-1]
 
             # GARCH(1,1) forecast
-            garch_forecast = self.garch.forecast(horizon=steps).mean["h.1"].iloc[-1]
-
+            garch_forecast = self.garch.forecast(horizon=steps).mean[f"h.{steps}"].iloc[-1]
             res = {
-                "value": arima_forecast + garch_forecast,
+                "value ARIMA": arima_forecast,
+                "value GARCH": garch_forecast,
                 "confidence interval": {"lower p": lower, "upper p": upper},
             }
 
@@ -102,9 +102,10 @@ def run_ARIMAGARCHModel(
     ###########################################################################
     ## Check the whole model
     ###########################################################################
-    print("Checking the whole model...")
+    print("Checking the model on the whole dataset...")
     myModel = ARIMAGARCHModel()
     myModel.fit(print_summary=True)
+    myModel.export_residuals()
 
     ###########################################################################
     ## FORECASTS
@@ -121,15 +122,18 @@ def run_ARIMAGARCHModel(
     )
     dates = temp.loc[mask, "t"]
 
-    list_1hourAhead_forecastValues = []
+    list_1hourAhead_ARIMAforecastValues = []
+    list_1hourAhead_GARCHforecastValues = []
     list_1hourAhead_forecastUpper = []
     list_1hourAhead_forecastLower = []
 
-    list_2hourAhead_forecastValues = []
+    list_2hourAhead_ARIMAforecastValues = []
+    list_2hourAhead_GARCHforecastValues = []
     list_2hourAhead_forecastUpper = []
     list_2hourAhead_forecastLower = []
 
-    list_3hourAhead_forecastValues = []
+    list_3hourAhead_ARIMAforecastValues = []
+    list_3hourAhead_GARCHforecastValues = []
     list_3hourAhead_forecastUpper = []
     list_3hourAhead_forecastLower = []
 
@@ -146,44 +150,56 @@ def run_ARIMAGARCHModel(
         # Forecast 1-hour ahead
         res = myModel.forecast(steps=1, alpha=0.05)
 
-        forecast_values = res["value"]
+        ARIMAforecast_values = res["value ARIMA"]
+        GARCHforecast_values = res["value GARCH"]
         confidence_interval = res["confidence interval"]
 
-        list_1hourAhead_forecastValues.append(forecast_values)
+        list_1hourAhead_ARIMAforecastValues.append(ARIMAforecast_values)
+        list_1hourAhead_GARCHforecastValues.append(GARCHforecast_values)
         list_1hourAhead_forecastLower.append(confidence_interval["lower p"])
         list_1hourAhead_forecastUpper.append(confidence_interval["upper p"])
 
         # Forecast 2-hour ahead
         res = myModel.forecast(steps=2, alpha=0.05)
 
-        forecast_values = res["value"]
+        ARIMAforecast_values = res["value ARIMA"]
+        GARCHforecast_values = res["value GARCH"]
         confidence_interval = res["confidence interval"]
 
-        list_2hourAhead_forecastValues.append(forecast_values)
+        list_2hourAhead_ARIMAforecastValues.append(ARIMAforecast_values)
+        list_2hourAhead_GARCHforecastValues.append(GARCHforecast_values)
         list_2hourAhead_forecastLower.append(confidence_interval["lower p"])
         list_2hourAhead_forecastUpper.append(confidence_interval["upper p"])
 
         # Forecast 3-hour ahead
         res = myModel.forecast(steps=3, alpha=0.05)
 
-        forecast_values = res["value"]
+        ARIMAforecast_values = res["value ARIMA"]
+        GARCHforecast_values = res["value GARCH"]
         confidence_interval = res["confidence interval"]
 
-        list_3hourAhead_forecastValues.append(forecast_values)
+        list_3hourAhead_ARIMAforecastValues.append(ARIMAforecast_values)
+        list_3hourAhead_GARCHforecastValues.append(GARCHforecast_values)
         list_3hourAhead_forecastLower.append(confidence_interval["lower p"])
         list_3hourAhead_forecastUpper.append(confidence_interval["upper p"])
 
     print("Forecasts are done")
 
-    forecastValues_1hourAhead = np.array(list_1hourAhead_forecastValues).flatten()
+    ARIMAforecastValues_1hourAhead = np.array(list_1hourAhead_ARIMAforecastValues).flatten()
+    GARCHforecastValues_1hourAhead = np.array(list_1hourAhead_GARCHforecastValues).flatten()
+    forecastValues_1hourAhead = ARIMAforecastValues_1hourAhead + GARCHforecastValues_1hourAhead
     forecastUpper_1hourAhead = np.array(list_1hourAhead_forecastUpper).flatten()
     forecastLower_1hourAhead = np.array(list_1hourAhead_forecastLower).flatten()
 
-    forecastValues_2hourAhead = np.array(list_2hourAhead_forecastValues).flatten()
+    ARIMAforecastValues_2hourAhead = np.array(list_2hourAhead_ARIMAforecastValues).flatten()
+    GARCHforecastValues_2hourAhead = np.array(list_2hourAhead_GARCHforecastValues).flatten()
+    forecastValues_2hourAhead = ARIMAforecastValues_2hourAhead + GARCHforecastValues_2hourAhead
     forecastUpper_2hourAhead = np.array(list_2hourAhead_forecastUpper).flatten()
     forecastLower_2hourAhead = np.array(list_2hourAhead_forecastLower).flatten()
 
-    forecastValues_3hourAhead = np.array(list_3hourAhead_forecastValues).flatten()
+    ARIMAforecastValues_3hourAhead = np.array(list_3hourAhead_ARIMAforecastValues).flatten()
+    GARCHforecastValues_3hourAhead = np.array(list_3hourAhead_GARCHforecastValues).flatten()
+    forecastValues_3hourAhead = ARIMAforecastValues_3hourAhead + GARCHforecastValues_3hourAhead
     forecastUpper_3hourAhead = np.array(list_3hourAhead_forecastUpper).flatten()
     forecastLower_3hourAhead = np.array(list_3hourAhead_forecastLower).flatten()
 
@@ -309,6 +325,13 @@ def run_ARIMAGARCHModel(
         label="Residuals",
         color="black",
     )
+    axs[1].plot(
+        residual_dates[1:],
+        GARCHforecastValues_1hourAhead[:-1],
+        linewidth=0.5,
+        label="GARCH(1,1) 1-hour ahead forecast",
+        color="blue",
+    )
     axs[1].set_xlabel("Time")
     axs[1].set_ylabel("Residuals")
     for day in pd.date_range(start=dates.min(), end=dates.max(), freq="D"):
@@ -359,6 +382,13 @@ def run_ARIMAGARCHModel(
         label="Residuals",
         color="black",
     )
+    axs[1].plot(
+        residual_dates[1:],
+        GARCHforecastValues_2hourAhead[:-1],
+        linewidth=0.5,
+        label="GARCH(1,1) 2-hour ahead forecast",
+        color="blue",
+    )
     axs[1].set_xlabel("Time")
     axs[1].set_ylabel("Residuals")
     for day in pd.date_range(start=dates.min(), end=dates.max(), freq="D"):
@@ -408,6 +438,13 @@ def run_ARIMAGARCHModel(
         linewidth=0.5,
         label="Residuals",
         color="black",
+    )
+    axs[1].plot(
+        residual_dates[1:],
+        GARCHforecastValues_3hourAhead[:-1],
+        linewidth=0.5,
+        label="GARCH(1,1) 3-hour ahead forecast",
+        color="blue",
     )
     axs[1].set_xlabel("Time")
     axs[1].set_ylabel("Residuals")
