@@ -1,9 +1,8 @@
 library(dbplyr)
 
 path <- "C:/Users/utilisateur/Documents/DTU/Première Année 2023-2024/Cours/Advanced Time Series Analysis/Computer Exercise 4/windPowerForecasting/residuals/"
-file_name <- "residuals-ARIMA(1,1,1).csv"
+file_name <- "residuals-ARIMA(1,1,1)-GARCH(1,1).csv"
 residuals <- read.csv(paste(path,file_name,sep=""))$fittedResiduals
-
 
 plotResiduals <- function(residuals) {
   
@@ -71,5 +70,4 @@ plot_residuals_analysis <- function(residuals) {
 }
 
 plot_residuals_analysis(residuals)
-
 
