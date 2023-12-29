@@ -13,3 +13,4 @@ We shall first consider a multivariate model based on the estimation of a **powe
 The analysis procedure shall remain consistent across ARIMA, ARMA-GARCH, and ARIMA-GARCH models. The models shall initially be fitted to the entire dataset spanning the year 1999. Subsequently, a rolling forecast approach shall be employed, fittingthe models on the preceding 1.5 years. It might be oversufficient and too heavy computationally.  
 
 All the details are in the `Wind power forecasting - report.pdf`. The methods are implemented in `R` and `Python`
+
